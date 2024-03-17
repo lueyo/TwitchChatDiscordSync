@@ -1,9 +1,10 @@
-//const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer-extra');
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+puppeteer.use(StealthPlugin());
 const Discord = require('discord.js');
-const axios = require('axios');
-const cheerio = require('cheerio');
+const readlineSync = require('readline-sync');
 
-// Declare and initialize lastMessage
+
 
 
 // Crea un nuevo cliente de Discord
@@ -19,38 +20,42 @@ discordClient.once('ready', () => {
     console.log('Discord bot is ready!');
 });
 
+
 // Inicia sesión en Discord con el token de tu bot
 discordClient.login(process.env.BOT_TOKEN);
 
+(async () => {
+    // Inicia Puppeteer
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
 
+    // Navega a la página del chat de Twitch
+    await page.goto(`https://www.twitch.tv/popout/${process.env.TWITCH_USER}/chat`);
 
-// Remove the duplicate declaration of 'lastMessage'
-let lastMessage = '';
+    // Espera a que se cargue el chat
+    await page.waitForSelector('.chat-line__message');
 
-setInterval(async () => {
-    try {
-        const response = await axios.get(`https://www.twitch.tv/popout/${process.env.TWITCH_USER}/chat`);
-        const $ = cheerio.load(response.data);
-        const message = $('.chat-line__message').last().text();
-        console.log(message);
+    // Almacena el último mensaje para comparar
+    let lastMessage = '';
 
-        if (!process.env.DISCORD_CLIENT_ID) {
-            throw new Error('DISCORD_CLIENT_ID is not set');
-        }
+    setInterval(async () => {
+        // Obtiene el último mensaje del chat
+        let message = await page.evaluate(() => {
+            let elements = Array.from(document.querySelectorAll('.chat-line__message'));
+            let lastElement = elements[elements.length - 1];
+            return lastElement.innerText;
+        });
 
-        if (!process.env.TWITCH_USER) {
-            throw new Error('TWITCH_USER is not set');
-        }
-
+        // Si el mensaje es nuevo
         if (message !== lastMessage) {
+            // Encuentra el canal de Discord
             const discordChannel = discordClient.channels.cache.get(process.env.DISCORD_CLIENT_ID);
-            if (!discordChannel) {
-                throw new Error('Discord channel not found');
-            }
+
+            // Envia el mensaje al canal de Discord
             discordChannel.send(message);
+
+            // Actualiza el último mensaje
             lastMessage = message;
         }
-    } catch (error) {
-        console.error('An error occurred:', error);
-    }
-}, 1000);
+    }, 1000); // Comprueba cada segundo
+})();
