@@ -22,25 +22,23 @@ discordClient.once('ready', () => {
 // Inicia sesión en Discord con el token de tu bot
 discordClient.login(process.env.BOT_TOKEN);
 
+
+
+// Remove the duplicate declaration of 'lastMessage'
+lastMessage = '';
+
 setInterval(async () => {
-    // Hace una solicitud HTTP a la página del chat de Twitch
-    const response = await axios.get(`https://www.twitch.tv/popout/${process.env.TWITCH_USER}/chat`);
+    try {
+        const response = await axios.get(`https://www.twitch.tv/popout/${process.env.TWITCH_USER}/chat`);
+        const $ = cheerio.load(response.data);
+        const message = $('.chat-line__message').last().text();
 
-    // Analiza el HTML devuelto
-    const $ = cheerio.load(response.data);
-
-    // Obtiene el último mensaje del chat
-    let message = $('.chat-line__message').last().text();
-
-    // Si el mensaje es nuevo
-    if (message !== lastMessage) {
-        // Encuentra el canal de Discord
-        const discordChannel = discordClient.channels.cache.get(process.env.DISCORD_CLIENT_ID);
-
-        // Envia el mensaje al canal de Discord
-        discordChannel.send(message);
-
-        // Actualiza el último mensaje
-        lastMessage = message;
+        if (message !== lastMessage) {
+            const discordChannel = discordClient.channels.cache.get(process.env.DISCORD_CLIENT_ID);
+            discordChannel.send(message);
+            lastMessage = message;
+        }
+    } catch (error) {
+        console.error(error);
     }
-}, 1000); // Comprueba cada segundo
+}, 1000);
