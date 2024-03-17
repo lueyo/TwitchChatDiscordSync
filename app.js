@@ -3,7 +3,6 @@ const Discord = require('discord.js');
 
 
 
-
 // Crea un nuevo cliente de Discord
 const discordClient = new Discord.Client({
     intents: [
@@ -20,39 +19,28 @@ discordClient.once('ready', () => {
 
 // Inicia sesión en Discord con el token de tu bot
 discordClient.login(process.env.BOT_TOKEN);
+const axios = require('axios');
+const cheerio = require('cheerio');
 
-(async () => {
-    // Inicia Puppeteer
-    const browser = await puppeteer.launch();
-    const page = await browser.newPage();
+setInterval(async () => {
+    // Hace una solicitud HTTP a la página del chat de Twitch
+    const response = await axios.get(`https://www.twitch.tv/popout/${process.env.TWITCH_USER}/chat`);
 
-    // Navega a la página del chat de Twitch
-    await page.goto(`https://www.twitch.tv/popout/${process.env.TWITCH_USER}/chat`);
+    // Analiza el HTML devuelto
+    const $ = cheerio.load(response.data);
 
-    // Espera a que se cargue el chat
-    await page.waitForSelector('.chat-line__message');
+    // Obtiene el último mensaje del chat
+    let message = $('.chat-line__message').last().text();
 
-    // Almacena el último mensaje para comparar
-    let lastMessage = '';
+    // Si el mensaje es nuevo
+    if (message !== lastMessage) {
+        // Encuentra el canal de Discord
+        const discordChannel = discordClient.channels.cache.get(process.env.DISCORD_CLIENT_ID);
 
-    setInterval(async () => {
-        // Obtiene el último mensaje del chat
-        let message = await page.evaluate(() => {
-            let elements = Array.from(document.querySelectorAll('.chat-line__message'));
-            let lastElement = elements[elements.length - 1];
-            return lastElement.innerText;
-        });
+        // Envia el mensaje al canal de Discord
+        discordChannel.send(message);
 
-        // Si el mensaje es nuevo
-        if (message !== lastMessage) {
-            // Encuentra el canal de Discord
-            const discordChannel = discordClient.channels.cache.get(process.env.DISCORD_CLIENT_ID);
-
-            // Envia el mensaje al canal de Discord
-            discordChannel.send(message);
-
-            // Actualiza el último mensaje
-            lastMessage = message;
-        }
-    }, 1000); // Comprueba cada segundo
-})();
+        // Actualiza el último mensaje
+        lastMessage = message;
+    }
+}, 1000); // Comprueba cada segundo
