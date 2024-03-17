@@ -5,6 +5,7 @@ const cheerio = require('cheerio');
 
 // Declare and initialize lastMessage
 
+
 // Crea un nuevo cliente de Discord
 const discordClient = new Discord.Client({
     intents: [
@@ -28,14 +29,11 @@ let lastMessage = '';
 
 setInterval(async () => {
     try {
+        const response = await axios.get(`https://www.twitch.tv/popout/${process.env.TWITCH_USER}/chat`);
+        const $ = cheerio.load(response.data);
+        const message = $('.chat-line__message').last().text();
+        console.log(message);
 
-        axios.get(`https://www.twitch.tv/popout/${process.env.TWITCH_USER}/chat`).then(response => {
-            const $ = cheerio.load(response.data);
-            const message = $('.chat-line__message .text-fragment').last().text();
-            console.log(message);
-        }).catch(error => {
-            console.error(error);
-        });
         if (!process.env.DISCORD_CLIENT_ID) {
             throw new Error('DISCORD_CLIENT_ID is not set');
         }
