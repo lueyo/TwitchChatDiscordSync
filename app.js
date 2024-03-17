@@ -1,28 +1,8 @@
 const puppeteer = require('puppeteer');
 const Discord = require('discord.js');
-const readlineSync = require('readline-sync');
 
 
-// Solicita el token del bot
-const botToken = readlineSync.question('Por favor, introduce el token de tu bot: ', {
-    hideEchoBack: true
 
-});
-
-console.clear();
-console.log("Token introducido correctamente");
-
-const channelId = readlineSync.question('Por favor, introduce la ID de tu canal: ', {
-    hideEchoBack: true
-
-});
-console.log(`ID de canal introducida correctamente: ${channelId}`);
-
-
-const twitchUser = readlineSync.question('Por favor, introduce el usuario de twitch: ', {
-    hideEchoBack: true
-
-});
 console.log(`Canal de twitch introducido correctamente: ${twitchUser}`);
 
 // Crea un nuevo cliente de Discord
@@ -40,7 +20,7 @@ discordClient.once('ready', () => {
 
 
 // Inicia sesión en Discord con el token de tu bot
-discordClient.login(botToken);
+discordClient.login(process.env.BOT_TOKEN);
 
 (async () => {
     // Inicia Puppeteer
@@ -48,7 +28,7 @@ discordClient.login(botToken);
     const page = await browser.newPage();
 
     // Navega a la página del chat de Twitch
-    await page.goto(`https://www.twitch.tv/popout/${twitchUser}/chat`);
+    await page.goto(`https://www.twitch.tv/popout/${process.env.TWITCH_USER}/chat`);
 
     // Espera a que se cargue el chat
     await page.waitForSelector('.chat-line__message');
@@ -67,7 +47,7 @@ discordClient.login(botToken);
         // Si el mensaje es nuevo
         if (message !== lastMessage) {
             // Encuentra el canal de Discord
-            const discordChannel = discordClient.channels.cache.get(channelId);
+            const discordChannel = discordClient.channels.cache.get(process.env.DISCORD_CLIENT_ID);
 
             // Envia el mensaje al canal de Discord
             discordChannel.send(message);
