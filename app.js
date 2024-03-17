@@ -4,7 +4,6 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 
 // Declare and initialize lastMessage
-let lastMessage = '';
 
 // Crea un nuevo cliente de Discord
 const discordClient = new Discord.Client({
@@ -25,20 +24,32 @@ discordClient.login(process.env.BOT_TOKEN);
 
 
 // Remove the duplicate declaration of 'lastMessage'
-lastMessage = '';
+let lastMessage = '';
 
 setInterval(async () => {
     try {
         const response = await axios.get(`https://www.twitch.tv/popout/${process.env.TWITCH_USER}/chat`);
         const $ = cheerio.load(response.data);
         const message = $('.chat-line__message').last().text();
+        console.log(message);
+
+        if (!process.env.DISCORD_CLIENT_ID) {
+            throw new Error('DISCORD_CLIENT_ID is not set');
+        }
+
+        if (!process.env.TWITCH_USER) {
+            throw new Error('TWITCH_USER is not set');
+        }
 
         if (message !== lastMessage) {
             const discordChannel = discordClient.channels.cache.get(process.env.DISCORD_CLIENT_ID);
+            if (!discordChannel) {
+                throw new Error('Discord channel not found');
+            }
             discordChannel.send(message);
             lastMessage = message;
         }
     } catch (error) {
-        console.error(error);
+        console.error('An error occurred:', error);
     }
 }, 1000);
