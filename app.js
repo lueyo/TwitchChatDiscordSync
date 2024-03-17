@@ -3,7 +3,6 @@ const Discord = require('discord.js');
 
 
 
-console.log(`Canal de twitch introducido correctamente: ${twitchUser}`);
 
 // Crea un nuevo cliente de Discord
 const discordClient = new Discord.Client({
