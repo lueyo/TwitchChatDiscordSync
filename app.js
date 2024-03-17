@@ -1,7 +1,10 @@
-const puppeteer = require('puppeteer');
+//const puppeteer = require('puppeteer');
 const Discord = require('discord.js');
+const axios = require('axios');
+const cheerio = require('cheerio');
 
-
+// Declare and initialize lastMessage
+let lastMessage = '';
 
 // Crea un nuevo cliente de Discord
 const discordClient = new Discord.Client({
@@ -16,11 +19,8 @@ discordClient.once('ready', () => {
     console.log('Discord bot is ready!');
 });
 
-
 // Inicia sesión en Discord con el token de tu bot
 discordClient.login(process.env.BOT_TOKEN);
-const axios = require('axios');
-const cheerio = require('cheerio');
 
 setInterval(async () => {
     // Hace una solicitud HTTP a la página del chat de Twitch
